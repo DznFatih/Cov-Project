@@ -1,0 +1,20 @@
+Excel Version:
+MS Excel for Office 365 64-bit
+
+Instructions-----
+
+1) There are four worksheets in the workbook:
+	All Countries Data - Prev (Hidden)
+	All Countries Data - Current (Hidden)
+	Summary
+	Increase From Previous Day 
+
+2) Data is taken from wikipedia via webscrabbing feature of Excel (Credit to Wikipedia);
+
+
+How to use it?
+
+1) Button that runs all macro is located in "Summary" sheet. Just click the button and it will execute the macro that
+   updates data;
+
+2) Sheet "Increase From Previous Day" shows the change from previous day; 
