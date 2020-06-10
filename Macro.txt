@@ -1,0 +1,138 @@
+Dim sh_data As Worksheet
+Dim tbl As ListObject
+
+    
+Sub Main()
+    Dim recov_col_num As Integer
+    Dim summary As Worksheet
+    
+    Application.ScreenUpdating = False: Application.Calculation = xlCalculationManual: Application.DisplayAlerts = False
+    
+    'On Error GoTo ErrorHandler
+    Set summary = Sheets("Summary")
+    
+    Set sh_data = Sheets("All Countries Data - Current")
+    sh_data.Activate
+    
+    Set tbl = sh_data.ListObjects(1)
+    recov_col_num = Application.WorksheetFunction.Match("Recov.", Range("A1:d1"))
+    
+    Call CopyDataToPrevDaySheet
+    Call RefreshData
+    Call CleanData
+
+    Call ChangeFormat(recov_col_num)
+    Call ResizeTable
+    Call CopyCountries
+    
+    summary.Activate
+    
+    Call RefreshPivot
+    
+    Application.ScreenUpdating = True: Application.Calculation = xlCalculationAutomatic: Application.DisplayAlerts = True
+    
+    MsgBox "Data has been updated.", , "Information"
+    Range("B1").Value = Now
+    Columns("B").ColumnWidth = 24
+    Exit Sub
+    
+'ErrorHandler:
+    'Exit Sub
+End Sub
+
+Private Sub RefreshData()
+    
+    Range("A1").ListObject.QueryTable.Refresh BackgroundQuery:=False
+
+End Sub
+
+Private Sub CleanData()
+    Dim i As Integer
+    Dim row_count As Integer
+
+    row_count = GetDataRowCount
+    
+    For i = 1 To row_count
+        
+        If UCase(Cells(i, 4).Value) Like "AS OF*" Or UCase(Cells(i, 4).Value) Like "NOTES^*" Then
+            Rows(i & ":" & i).Delete Shift:=xlUp
+            i = i - 2
+        End If
+    
+    Next i
+    
+End Sub
+
+Sub ChangeFormat(col_number As Integer)
+    Columns(col_number).Select
+    With Selection
+        .NumberFormat = "General"
+        .Value = .Value
+    End With
+End Sub
+
+
+Sub ResizeTable()
+    
+    Dim row_count As Integer
+    
+    row_count = GetDataRowCount
+    tbl.Resize Range("A1:D" & row_count)
+
+End Sub
+
+Private Sub RefreshPivot()
+    ActiveSheet.PivotTables("PVT_Covid").PivotCache.Refresh
+End Sub
+
+Private Sub CopyDataToPrevDaySheet()
+    Dim sh_prev_day As Worksheet
+    Dim ddate As Date
+    Dim prev_date As Date
+    Dim row_count As Integer
+    
+    row_count = GetDataRowCount
+    
+    ddate = Format(Now, "MM/DD/YYYY")
+    prev_date = Format(Sheets("Summary").Range("B1").Value, "MM/DD/YYYY")
+    
+    If prev_date <> ddate Then
+    
+        Set sh_prev_day = Sheets("All Countries Data - Prev")
+        
+        sh_prev_day.Range("A2:D1000").Clear
+        sh_data.Range("A2:D" & row_count).Copy
+        sh_prev_day.Range("A2").PasteSpecial xlPasteValuesAndNumberFormats
+        
+        Application.CutCopyMode = False
+    End If
+End Sub
+
+Sub CopyCountries()
+    
+    Dim rw_count_inc_sh As Integer
+    Dim sh As Worksheet
+    Dim row_count As Integer
+    
+    Set sh = Sheets("Increase From Previous Day")
+    
+    If sh.Range("A2").Value <> "" Then
+        rw_count_inc_sh = sh.Range("A100000").End(xlUp).Row
+        
+        sh.Rows(3 & ":" & rw_count_inc_sh).Delete
+        sh.Range("A2").Clear
+    End If
+    
+    row_count = GetDataRowCount
+    Sheets("All Countries Data - Current").Range("A2:A" & row_count).Copy
+    sh.Range("A2:A" & row_count).PasteSpecial xlPasteValuesAndNumberFormats
+
+End Sub
+
+
+Private Function GetDataRowCount() As Integer
+    
+    'Assume data starts from A1 column
+    GetDataRowCount = sh_data.Range("A100000").End(xlUp).Row
+    
+End Function
